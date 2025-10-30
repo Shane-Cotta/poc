@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# In production, use environment variables: SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 SECRET_KEY = 'django-insecure-po(k9bl0*6rt&2x@x#+w1dt!_1-c2sib4a!-$^#n1ey3j$fu5o'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -124,8 +125,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email settings - using console backend for development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@example.com'
 
 # CSV Processing settings
 CSV_INCOMING_DIR = BASE_DIR / 'incoming'
 CSV_PROCESSED_DIR = BASE_DIR / 'processed'
 ZIP_API_URL = 'https://api.zippopotam.us/us/{zip}'
+ZIP_API_TIMEOUT = 5  # seconds

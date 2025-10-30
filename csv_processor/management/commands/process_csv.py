@@ -163,9 +163,10 @@ class Command(BaseCommand):
     def get_location_from_zip(self, zip_code):
         """Fetch state and city information from ZIP code API"""
         url = settings.ZIP_API_URL.format(zip=zip_code)
+        timeout = getattr(settings, 'ZIP_API_TIMEOUT', 5)
         
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -195,11 +196,12 @@ State: {state}
 
 Thank you!
 '''
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')
         
         send_mail(
             subject,
             message,
-            'noreply@example.com',
+            from_email,
             [email],
             fail_silently=False,
         )
