@@ -1,0 +1,56 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django: Run All Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "test"
+            ],
+            "django": true,
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Django: Run Management Command Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "test",
+                "csv_processor.tests.ProcessCSVCommandTest"
+            ],
+            "django": true,
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Django: process_csv Command ever 120 seconds",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "process_csv"
+            ],
+            "django": true,
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+          "name": "Launch Admin Server",
+          "type": "debugpy",
+          "request": "launch",
+          "program": "${workspaceFolder}/manage.py",
+          "args": ["runserver", "0.0.0.0:8000"],
+          "django": true,
+          "justMyCode": false,
+          "console": "integratedTerminal",
+          "cwd": "${workspaceFolder}"
+        }
+    ]
+}
