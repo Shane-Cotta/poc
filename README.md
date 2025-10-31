@@ -119,7 +119,7 @@ python manage.py createsuperuser
 
 2. Run the development server:
 ```bash
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 ```
 
 3. Access the admin at http://localhost:8000/admin/

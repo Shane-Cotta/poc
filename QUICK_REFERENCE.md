@@ -57,10 +57,10 @@ python manage.py check
 
 ```bash
 # Start development server
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 
 # Start on specific port
-python manage.py runserver 8080
+python manage.py runserver 0.0.0.0:8080
 
 # Access admin interface
 # http://localhost:8000/admin/
@@ -136,7 +136,7 @@ zip,email
 
 2. Start the server:
    ```bash
-   python manage.py runserver
+   python manage.py runserver 0.0.0.0:8000
    ```
 
 3. Open browser to http://localhost:8000/admin/
