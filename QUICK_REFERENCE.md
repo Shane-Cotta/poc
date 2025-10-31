@@ -1,6 +1,6 @@
 # Quick Reference Guide
 
-## Setup Commands
+## Setup Commands (Non Devcontainer)
 
 ```bash
 # Install dependencies
@@ -15,6 +15,16 @@ python manage.py createsuperuser
 # Create directories
 mkdir incoming processed
 ```
+## Setup Commands (Docker VSCode devcontainer usage)
+
+```bash
+VSCode Devcontainer:
+Open project in VS Code
+Install "Dev Containers" extension
+Press F1 -> "Dev Containers: Reopen in Container"
+Wait for container to build and start
+(If on Mac CMD + SHIFT + P to open command palette then type "Dev Containers: Reopen in Container")
+```
 
 ## Processing Commands
 
@@ -24,6 +34,7 @@ python manage.py process_csv --once
 
 # Run continuously (default: every 2 minutes)
 python manage.py process_csv
+(drop a copy of the sample_data.csv into the incoming folder)
 
 # Run with custom interval (in seconds)
 python manage.py process_csv --interval 60

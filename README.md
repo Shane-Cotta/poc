@@ -87,7 +87,7 @@ python manage.py process_csv
 Or specify a custom interval (in seconds):
 
 ```bash
-python manage.py process_csv --interval 60
+python manage.py process_csv --interval 120
 ```
 
 ### CSV Format
@@ -112,6 +112,7 @@ python manage.py test csv_processor
 ### Admin Interface
 
 1. Create a superuser:
+NOTE: current sqllite db user is vscode:password
 ```bash
 python manage.py createsuperuser
 ```
@@ -129,11 +130,17 @@ python manage.py runserver
 
 1. Open the project in VS Code
 2. Install the "Dev Containers" extension
-3. Click "Reopen in Container" when prompted
+3. Click "Reopen in Container" when prompted (or CMD+SHIFT+P on mac and search "Rebuild in container")
 4. The container will automatically:
    - Install Python dependencies
    - Run database migrations
    - Configure GitHub Copilot
+
+### Run & Debug Profiles
+
+- Open the Run and Debug view in VS Code to access project-ready launch profiles from `.vscode/launch.json`.
+- Use `Django: Run All Tests` to debug the full Django test suite (`python manage.py test`).
+- Use `Django: Debug process_csv Command` to step through a re-occuring execution of `python manage.py process_csv --once` while processing local CSV fixtures.
 
 ### Copilot Resources
 
@@ -148,6 +155,7 @@ Check the `.copilot_prompts/` directory for:
 poc/
 ├── .copilot_prompts/        # Copilot prompt logs and documentation
 ├── .devcontainer/           # VS Code dev container configuration
+├── .vscode/                 # VS Code Settings
 ├── csv_processor/           # Main Django app
 │   ├── management/
 │   │   └── commands/

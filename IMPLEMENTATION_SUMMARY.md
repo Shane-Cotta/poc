@@ -95,6 +95,8 @@ poc/
 │   └── README.md                    # Copilot usage documentation
 ├── .devcontainer/
 │   └── devcontainer.json            # VS Code dev container config
+├── .vscode/
+│   └── launch.json                  # Test & debug configurations
 ├── csv_processor/
 │   ├── management/
 │   │   └── commands/
