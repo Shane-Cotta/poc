@@ -85,7 +85,7 @@ class Command(BaseCommand):
             filename=csv_file_path.name,
             status='processing'
         )
-        logger.debug('Created processing record with ID: %d for file: %s', 
+        logger.debug('Created processing record with ID: %d for file: %s',
                     record.id, csv_file_path.name)
         
         total_rows = 0
@@ -106,8 +106,8 @@ class Command(BaseCommand):
                     if not zip_code or not email:
                         failed_rows += 1
                         logger.warning('Row %d in %s has missing data: zip=%s, email=%s',
-                                     total_rows, csv_file_path.name, 
-                                     zip_code or 'MISSING', email or 'MISSING')
+                                      total_rows, csv_file_path.name, 
+                                      zip_code or 'MISSING', email or 'MISSING')
                         EmailRecord.objects.create(
                             processing_record=record,
                             email_address=email or 'N/A',
@@ -142,7 +142,7 @@ class Command(BaseCommand):
             ))
             
         except Exception as e:
-            logger.error('Error processing CSV file %s: %s', csv_file_path.name, str(e), 
+            logger.error('Error processing CSV file %s: %s', csv_file_path.name, str(e),
                         exc_info=True)
             record.status = 'failed'
             record.save()
@@ -175,7 +175,7 @@ class Command(BaseCommand):
             
         except Exception as e:
             logger.warning('Failed to process row: email=%s, zip=%s, error=%s',
-                         email, zip_code, str(e))
+                          email, zip_code, str(e))
             # Record failure
             EmailRecord.objects.create(
                 processing_record=record,
@@ -204,8 +204,8 @@ class Command(BaseCommand):
                 place = data['places'][0]
                 state = place.get('state', 'Unknown')
                 city = place.get('place name', 'Unknown')
-                logger.debug('ZIP API returned: zip=%s, state=%s, city=%s', 
-                           zip_code, state, city)
+                logger.debug('ZIP API returned: zip=%s, state=%s, city=%s',
+                            zip_code, state, city)
                 return state, city
             else:
                 logger.warning('ZIP API returned no places for zip=%s', zip_code)

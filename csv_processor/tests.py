@@ -1,5 +1,6 @@
 import csv
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -71,7 +72,6 @@ class ProcessCSVCommandTest(TestCase):
 
     def tearDown(self):
         # Clean up temporary directories
-        import shutil
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def create_test_csv(self, filename, rows):
@@ -210,7 +210,6 @@ class LoggingTest(TestCase):
     
     def setUp(self):
         # Create temporary directories for testing
-        import tempfile
         self.test_dir = tempfile.mkdtemp()
         self.incoming_dir = Path(self.test_dir) / 'incoming'
         self.processed_dir = Path(self.test_dir) / 'processed'
@@ -219,7 +218,6 @@ class LoggingTest(TestCase):
 
     def tearDown(self):
         # Clean up temporary directories
-        import shutil
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def create_test_csv(self, filename, rows):

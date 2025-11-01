@@ -148,6 +148,7 @@ Check the `.copilot_prompts/` directory for:
 - Prompt examples and best practices
 - Development tips
 - Common patterns used in this project
+- **Logging best practices** - Django logging standards and implementation guide
 
 ## Project Structure
 
