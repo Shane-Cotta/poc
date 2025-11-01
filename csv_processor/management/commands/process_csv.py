@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 import shutil
 import time
@@ -11,6 +12,9 @@ from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 
 from csv_processor.models import CSVProcessingRecord, EmailRecord
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -37,9 +41,11 @@ class Command(BaseCommand):
         self.ensure_directories()
         
         if run_once:
+            logger.info('Starting single CSV scan')
             self.stdout.write(self.style.SUCCESS('Running single scan...'))
             self.process_csv_files()
         else:
+            logger.info('Starting continuous CSV scan with %d second interval', interval)
             self.stdout.write(self.style.SUCCESS(f'Starting continuous scan every {interval} seconds...'))
             while True:
                 self.process_csv_files()
@@ -47,6 +53,8 @@ class Command(BaseCommand):
 
     def ensure_directories(self):
         """Ensure incoming and processed directories exist"""
+        logger.debug('Ensuring directories exist: incoming=%s, processed=%s',
+                    settings.CSV_INCOMING_DIR, settings.CSV_PROCESSED_DIR)
         settings.CSV_INCOMING_DIR.mkdir(exist_ok=True)
         settings.CSV_PROCESSED_DIR.mkdir(exist_ok=True)
 
@@ -57,9 +65,11 @@ class Command(BaseCommand):
         csv_files = list(incoming_dir.glob('*.csv'))
         
         if not csv_files:
+            logger.info('No CSV files found in %s', incoming_dir)
             self.stdout.write(f'[{datetime.now()}] No CSV files found in {incoming_dir}')
             return
         
+        logger.info('Found %d CSV file(s) to process in %s', len(csv_files), incoming_dir)
         self.stdout.write(self.style.SUCCESS(f'[{datetime.now()}] Found {len(csv_files)} CSV file(s) to process'))
         
         for csv_file in csv_files:
@@ -67,6 +77,7 @@ class Command(BaseCommand):
 
     def process_single_csv(self, csv_file_path):
         """Process a single CSV file"""
+        logger.info('Processing CSV file: %s', csv_file_path.name)
         self.stdout.write(f'Processing {csv_file_path.name}...')
         
         # Create processing record
@@ -74,6 +85,8 @@ class Command(BaseCommand):
             filename=csv_file_path.name,
             status='processing'
         )
+        logger.debug('Created processing record with ID: %d for file: %s', 
+                    record.id, csv_file_path.name)
         
         total_rows = 0
         successful_rows = 0
@@ -92,6 +105,9 @@ class Command(BaseCommand):
                     
                     if not zip_code or not email:
                         failed_rows += 1
+                        logger.warning('Row %d in %s has missing data: zip=%s, email=%s',
+                                     total_rows, csv_file_path.name, 
+                                     zip_code or 'MISSING', email or 'MISSING')
                         EmailRecord.objects.create(
                             processing_record=record,
                             email_address=email or 'N/A',
@@ -115,6 +131,9 @@ class Command(BaseCommand):
             record.status = 'completed'
             record.save()
             
+            logger.info('Completed processing %s: %d/%d rows successful, %d failed',
+                       csv_file_path.name, successful_rows, total_rows, failed_rows)
+            
             # Move to processed folder
             self.move_to_processed(csv_file_path)
             
@@ -123,6 +142,8 @@ class Command(BaseCommand):
             ))
             
         except Exception as e:
+            logger.error('Error processing CSV file %s: %s', csv_file_path.name, str(e), 
+                        exc_info=True)
             record.status = 'failed'
             record.save()
             self.stdout.write(self.style.ERROR(f'Error processing {csv_file_path.name}: {str(e)}'))
@@ -130,6 +151,8 @@ class Command(BaseCommand):
     def process_row(self, record, zip_code, email):
         """Process a single row: fetch state from API and send email"""
         try:
+            logger.debug('Processing row: email=%s, zip=%s', email, zip_code)
+            
             # Call ZIP API
             state, city = self.get_location_from_zip(zip_code)
             
@@ -146,9 +169,13 @@ class Command(BaseCommand):
                 success=True
             )
             
+            logger.debug('Successfully processed row: email=%s, zip=%s, state=%s, city=%s',
+                        email, zip_code, state, city)
             return True
             
         except Exception as e:
+            logger.warning('Failed to process row: email=%s, zip=%s, error=%s',
+                         email, zip_code, str(e))
             # Record failure
             EmailRecord.objects.create(
                 processing_record=record,
@@ -166,6 +193,7 @@ class Command(BaseCommand):
         timeout = getattr(settings, 'ZIP_API_TIMEOUT', 5)
         
         try:
+            logger.debug('Calling ZIP API for zip=%s, url=%s', zip_code, url)
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
             
@@ -176,11 +204,15 @@ class Command(BaseCommand):
                 place = data['places'][0]
                 state = place.get('state', 'Unknown')
                 city = place.get('place name', 'Unknown')
+                logger.debug('ZIP API returned: zip=%s, state=%s, city=%s', 
+                           zip_code, state, city)
                 return state, city
             else:
+                logger.warning('ZIP API returned no places for zip=%s', zip_code)
                 return 'Unknown', 'Unknown'
                 
         except requests.RequestException as e:
+            logger.error('ZIP API request failed for zip=%s: %s', zip_code, str(e))
             raise Exception(f'API error for ZIP {zip_code}: {str(e)}')
 
     def send_email_to_address(self, email, zip_code, state, city):
@@ -198,6 +230,7 @@ Thank you!
 '''
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com')
         
+        logger.debug('Sending email to %s with subject: %s', email, subject)
         send_mail(
             subject,
             message,
@@ -205,6 +238,7 @@ Thank you!
             [email],
             fail_silently=False,
         )
+        logger.info('Email sent successfully to %s for ZIP %s', email, zip_code)
 
     def move_to_processed(self, csv_file_path):
         """Move processed CSV file to processed directory"""
@@ -215,4 +249,5 @@ Thank you!
         new_filename = f"{csv_file_path.stem}_{timestamp}{csv_file_path.suffix}"
         
         destination = processed_dir / new_filename
+        logger.info('Moving processed file from %s to %s', csv_file_path, destination)
         shutil.move(str(csv_file_path), str(destination))

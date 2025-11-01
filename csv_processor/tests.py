@@ -204,3 +204,95 @@ class ProcessCSVCommandTest(TestCase):
         self.assertEqual(CSVProcessingRecord.objects.count(), 0)
         self.assertEqual(EmailRecord.objects.count(), 0)
 
+
+class LoggingTest(TestCase):
+    """Test that logging is working correctly"""
+    
+    def setUp(self):
+        # Create temporary directories for testing
+        import tempfile
+        self.test_dir = tempfile.mkdtemp()
+        self.incoming_dir = Path(self.test_dir) / 'incoming'
+        self.processed_dir = Path(self.test_dir) / 'processed'
+        self.incoming_dir.mkdir()
+        self.processed_dir.mkdir()
+
+    def tearDown(self):
+        # Clean up temporary directories
+        import shutil
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def create_test_csv(self, filename, rows):
+        """Helper to create a test CSV file"""
+        csv_path = self.incoming_dir / filename
+        with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=['zip', 'email'])
+            writer.writeheader()
+            writer.writerows(rows)
+        return csv_path
+
+    @override_settings(
+        CSV_INCOMING_DIR=None,
+        CSV_PROCESSED_DIR=None
+    )
+    @patch('csv_processor.management.commands.process_csv.Command.get_location_from_zip')
+    @patch('csv_processor.management.commands.process_csv.send_mail')
+    def test_logging_messages(self, mock_send_mail, mock_get_location):
+        """Test that appropriate log messages are generated"""
+        # Setup
+        from django.conf import settings
+        settings.CSV_INCOMING_DIR = self.incoming_dir
+        settings.CSV_PROCESSED_DIR = self.processed_dir
+
+        mock_get_location.return_value = ('California', 'Beverly Hills')
+
+        # Create test CSV
+        test_data = [
+            {'zip': '90210', 'email': 'test@example.com'},
+        ]
+        self.create_test_csv('test.csv', test_data)
+
+        # Run command and capture logs
+        with self.assertLogs('csv_processor.management.commands.process_csv', level='INFO') as cm:
+            call_command('process_csv', '--once')
+
+        # Verify log messages contain expected content
+        log_output = ' '.join(cm.output)
+        self.assertIn('Starting single CSV scan', log_output)
+        self.assertIn('Found 1 CSV file(s) to process', log_output)
+        self.assertIn('Processing CSV file: test.csv', log_output)
+        self.assertIn('Email sent successfully', log_output)
+        self.assertIn('Completed processing test.csv', log_output)
+        self.assertIn('Moving processed file', log_output)
+
+    @override_settings(
+        CSV_INCOMING_DIR=None,
+        CSV_PROCESSED_DIR=None
+    )
+    @patch('csv_processor.management.commands.process_csv.Command.get_location_from_zip')
+    @patch('csv_processor.management.commands.process_csv.send_mail')
+    def test_warning_logging_for_missing_data(self, mock_send_mail, mock_get_location):
+        """Test that warnings are logged for missing data"""
+        # Setup
+        from django.conf import settings
+        settings.CSV_INCOMING_DIR = self.incoming_dir
+        settings.CSV_PROCESSED_DIR = self.processed_dir
+
+        mock_get_location.return_value = ('California', 'Beverly Hills')
+
+        # Create test CSV with missing data
+        test_data = [
+            {'zip': '', 'email': 'test@example.com'},  # Missing zip
+        ]
+        self.create_test_csv('test.csv', test_data)
+
+        # Run command and capture logs at WARNING level
+        with self.assertLogs('csv_processor.management.commands.process_csv', level='WARNING') as cm:
+            call_command('process_csv', '--once')
+
+        # Verify warning was logged
+        log_output = ' '.join(cm.output)
+        self.assertIn('has missing data', log_output)
+        self.assertIn('MISSING', log_output)
+
+

@@ -183,6 +183,27 @@ Configuration is in `csv_project/settings.py`:
 - `CSV_INCOMING_DIR`: Directory to scan for CSV files
 - `CSV_PROCESSED_DIR`: Directory for processed files
 - `ZIP_API_URL`: Zippopotam API endpoint
+- `LOGGING`: Logging configuration with console and file handlers
+
+### Logging
+
+The application uses Python's `logging` module following Django best practices:
+
+- **Log File**: `csv_processor.log` in project root (gitignored)
+- **Log Levels**:
+  - INFO: Normal operations (file processing, completions)
+  - WARNING: Recoverable issues (missing data, failed rows)
+  - ERROR: Serious failures (file errors, API failures)
+  - DEBUG: Detailed diagnostic information
+- **Handlers**: Console output and file logging
+- **Format**: `{levelname} {asctime} {name} {message}`
+
+To view logs in real-time:
+```bash
+tail -f csv_processor.log
+```
+
+For more details, see [Logging Best Practices](.copilot_prompts/LoggingBestPractices.md).
 
 ## API Integration
 
