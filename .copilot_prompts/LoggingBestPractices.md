@@ -176,6 +176,37 @@ logger.info('Login attempt with password: %s', password)
 logger.info('Login attempt for user: %s', username)
 ```
 
+**Email Address Security:**
+Email addresses are considered personal information and should be handled carefully:
+
+```python
+# DON'T - Logging full email at INFO/WARNING in production
+logger.info('Processing email: %s', user_email)
+logger.warning('Failed for email: %s', user_email)
+
+# DO - Mask emails in non-DEBUG logs, full email only at DEBUG level
+def mask_email(email):
+    """Mask email for production logs"""
+    if not email or '@' not in email:
+        return email
+    local, domain = email.rsplit('@', 1)
+    masked_local = local[0] + '***' if local else '***'
+    masked_domain = domain[0] + '***' if domain else '***'
+    return f"{masked_local}@{masked_domain}"
+
+# INFO/WARNING level - masked
+logger.info('Processing email: %s', mask_email(user_email))
+logger.warning('Failed for email: %s', mask_email(user_email))
+
+# DEBUG level - full email (only in development)
+logger.debug('Processing email: %s', user_email)
+```
+
+This ensures that:
+- Production logs (INFO/WARNING/ERROR) don't expose full email addresses
+- DEBUG logs (development only) can include full details for troubleshooting
+- Compliance with data privacy regulations (GDPR, CCPA, etc.)
+
 #### 10. Performance Considerations
 
 For expensive operations (like serializing large objects), use lazy evaluation:
@@ -193,23 +224,53 @@ if logger.isEnabledFor(logging.DEBUG):
 The process_csv command uses logging at different levels:
 
 - **INFO**: Major milestones (start, file found, completion, file moved)
+  - Email addresses are **masked** (e.g., `u***@e***.com`) to protect PII
 - **DEBUG**: Detailed processing steps (each row, API calls, email sending)
+  - Full email addresses included for development/debugging
 - **WARNING**: Recoverable issues (missing data, failed rows)
+  - Email addresses are **masked** to protect PII
 - **ERROR**: Serious failures (file processing errors, API failures)
+
+### Email Address Security
+
+Email addresses are considered personal identifiable information (PII). The application implements:
+
+1. **Email Masking Function**: `mask_email()` masks email addresses in production logs
+2. **Dual Logging**: 
+   - Non-DEBUG levels (INFO, WARNING, ERROR) log masked emails
+   - DEBUG level logs full email addresses (development only)
+3. **Console Output**: User-facing stdout messages also use masked emails
+
+Example:
+```python
+# Production logs (INFO/WARNING)
+logger.info('Email sent successfully to %s for ZIP %s', mask_email(email), zip_code)
+# Output: Email sent successfully to u***@e***.com for ZIP 90210
+
+# Debug logs (development)
+logger.debug('Email sent to %s for ZIP %s', email, zip_code)
+# Output: Email sent to user@example.com for ZIP 90210
+```
 
 ### Example Log Output
 
+**Production Logs (INFO level, emails masked):**
 ```
 INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Starting single CSV scan
 INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Found 1 CSV file(s) to process in /incoming
 INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Processing CSV file: data.csv
+INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Email sent successfully to u***@e***.com for ZIP 90210
+INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Completed processing data.csv: 10/10 rows successful, 0 failed
+INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Moving processed file to /processed/data_20251101_191630.csv
+```
+
+**Development Logs (DEBUG level, full email addresses):**
+```
 DEBUG 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Processing row: email=user@example.com, zip=90210
 DEBUG 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Calling ZIP API for zip=90210
 DEBUG 2025-11-01 19:16:30 csv_processor.management.commands.process_csv ZIP API returned: state=California, city=Beverly Hills
 DEBUG 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Sending email to user@example.com
-INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Email sent successfully to user@example.com
-INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Completed processing data.csv: 10/10 rows successful, 0 failed
-INFO 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Moving processed file to /processed/data_20251101_191630.csv
+DEBUG 2025-11-01 19:16:30 csv_processor.management.commands.process_csv Email sent to user@example.com for ZIP 90210
 ```
 
 ## Testing Logging

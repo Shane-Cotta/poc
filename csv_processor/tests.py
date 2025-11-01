@@ -9,6 +9,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 
 from .models import CSVProcessingRecord, EmailRecord
+from .management.commands.process_csv import mask_email
 
 
 class CSVProcessingRecordModelTest(TestCase):
@@ -292,5 +293,29 @@ class LoggingTest(TestCase):
         log_output = ' '.join(cm.output)
         self.assertIn('has missing data', log_output)
         self.assertIn('MISSING', log_output)
+
+
+class EmailMaskingTest(TestCase):
+    """Test email masking functionality for security"""
+    
+    def test_mask_email_standard(self):
+        """Test masking of standard email addresses"""
+        self.assertEqual(mask_email('user@example.com'), 'u***@e***.com')
+        self.assertEqual(mask_email('john.doe@company.org'), 'j***@c***.org')
+        self.assertEqual(mask_email('test@test.co.uk'), 't***@t***.uk')
+    
+    def test_mask_email_short(self):
+        """Test masking of short email addresses"""
+        self.assertEqual(mask_email('a@b.com'), 'a***@b***.com')
+        
+    def test_mask_email_no_at_sign(self):
+        """Test handling of invalid email (no @ sign)"""
+        self.assertEqual(mask_email('notanemail'), 'notanemail')
+        
+    def test_mask_email_empty(self):
+        """Test handling of empty email"""
+        self.assertEqual(mask_email(''), '')
+        self.assertEqual(mask_email(None), None)
+
 
 

@@ -17,6 +17,29 @@ from csv_processor.models import CSVProcessingRecord, EmailRecord
 logger = logging.getLogger(__name__)
 
 
+def mask_email(email):
+    """
+    Mask email address for security in production logs.
+    Only shows first character of local part and domain.
+    Example: user@example.com -> u***@e***.com
+    """
+    if not email or '@' not in email:
+        return email
+    local, domain = email.rsplit('@', 1)
+    if len(local) > 0:
+        masked_local = local[0] + '***'
+    else:
+        masked_local = '***'
+    
+    if '.' in domain:
+        domain_parts = domain.split('.')
+        masked_domain = domain_parts[0][0] + '***.' + domain_parts[-1] if domain_parts[0] else '***.' + domain_parts[-1]
+    else:
+        masked_domain = domain[0] + '***' if domain else '***'
+    
+    return f"{masked_local}@{masked_domain}"
+
+
 class Command(BaseCommand):
     help = 'Scans incoming folder for CSV files, processes them, and sends emails'
 
@@ -107,7 +130,9 @@ class Command(BaseCommand):
                         failed_rows += 1
                         logger.warning('Row %d in %s has missing data: zip=%s, email=%s',
                                       total_rows, csv_file_path.name, 
-                                      zip_code or 'MISSING', email or 'MISSING')
+                                      zip_code or 'MISSING', mask_email(email) if email else 'MISSING')
+                        logger.debug('Row %d missing data details: zip=%s, email=%s',
+                                    total_rows, zip_code or 'MISSING', email or 'MISSING')
                         EmailRecord.objects.create(
                             processing_record=record,
                             email_address=email or 'N/A',
@@ -175,7 +200,9 @@ class Command(BaseCommand):
             
         except Exception as e:
             logger.warning('Failed to process row: email=%s, zip=%s, error=%s',
-                          email, zip_code, str(e))
+                          mask_email(email), zip_code, str(e))
+            logger.debug('Failed to process row details: email=%s, zip=%s, error=%s',
+                        email, zip_code, str(e))
             # Record failure
             EmailRecord.objects.create(
                 processing_record=record,
@@ -184,7 +211,7 @@ class Command(BaseCommand):
                 success=False,
                 error_message=str(e)
             )
-            self.stdout.write(self.style.WARNING(f'Failed to process {email}: {str(e)}'))
+            self.stdout.write(self.style.WARNING(f'Failed to process {mask_email(email)}: {str(e)}'))
             return False
 
     def get_location_from_zip(self, zip_code):
@@ -238,7 +265,8 @@ Thank you!
             [email],
             fail_silently=False,
         )
-        logger.info('Email sent successfully to %s for ZIP %s', email, zip_code)
+        logger.info('Email sent successfully to %s for ZIP %s', mask_email(email), zip_code)
+        logger.debug('Email sent to %s for ZIP %s', email, zip_code)
 
     def move_to_processed(self, csv_file_path):
         """Move processed CSV file to processed directory"""
