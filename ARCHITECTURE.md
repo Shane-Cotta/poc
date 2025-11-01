@@ -143,6 +143,12 @@ Django Project (csv_project)
 │   ├── send_email_to_address()
 │   └── move_to_processed()
 │
+├── Logging (Python logging module)
+│   ├── Logger: csv_processor.management.commands.process_csv
+│   ├── Levels: DEBUG, INFO, WARNING, ERROR
+│   ├── Handlers: Console + File (csv_processor.log)
+│   └── Format: {levelname} {asctime} {name} {message}
+│
 ├── Admin Interface
 │   ├── CSVProcessingRecordAdmin
 │   └── EmailRecordAdmin
