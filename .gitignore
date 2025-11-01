@@ -27,6 +27,7 @@ local_settings.py
 /staticfiles
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/

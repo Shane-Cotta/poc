@@ -48,6 +48,8 @@ cd poc
 
 2. Install dependencies:
 ```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -120,6 +122,8 @@ python manage.py createsuperuser
 2. Run the development server:
 ```bash
 python manage.py runserver 0.0.0.0:8000
+(you may need to use `python3` depending on your setup
+depending on you host OS, http://localhost:8000/ or http://127.0.0.1:8000/)
 ```
 
 3. Access the admin at http://localhost:8000/admin/
@@ -136,7 +140,7 @@ python manage.py runserver 0.0.0.0:8000
    - Run database migrations
    - Configure GitHub Copilot
 
-### Run & Debug Profiles
+### Run & Debug Profiles within VS Code Dev Container
 
 - Open the Run and Debug view in VS Code to access project-ready launch profiles from `.vscode/launch.json`.
 - Use `Django: Run All Tests` to debug the full Django test suite (`python manage.py test`).
